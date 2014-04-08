@@ -4,7 +4,7 @@ public class Constants {
 
 	public static final String URL="https://www.ovh.com/cgi-bin/sms/http2sms.cgi";
 	
-	public static final String DATE_FORMAT="hhmmjjMMAAAA";
+	public static final String DATE_FORMAT="HHmmddMMyyyy";
 	
 	/**
 	 *  Type de classe pour le SMS

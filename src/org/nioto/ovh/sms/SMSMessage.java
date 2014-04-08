@@ -1,6 +1,5 @@
 package org.nioto.ovh.sms;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,18 +15,16 @@ import com.github.kevinsawicki.http.HttpRequest;
 public class SMSMessage {
 
 	SMSApi api;
-	private String from;
 	private List<String> to;
 	private String message;
-	private int nostop = 1;
+	private boolean addStop = false;
 	private Date date;
 	private String tag;
 	private SmsClass classType = SmsClass.CLASS_1;
 	private ContentType contentType = ContentType.TEXT_PLAIN;
 	
-	protected SMSMessage(SMSApi api, String from){
+	protected SMSMessage(SMSApi api){
 		this.api = api;
-		this.from = from;
 		this.to = new ArrayList<String>();
 	}
 	
@@ -70,6 +67,11 @@ public class SMSMessage {
 		this.contentType = contentType;
 	}
 	
+	
+	public void addStop(boolean b){
+		this.addStop = b;
+	}
+	
 	public void checkData() 
 			throws SMSException{
 		Check.notEmpty("recipients", this.to);
@@ -78,20 +80,21 @@ public class SMSMessage {
 
 	private Map<String, Object> getData(){
 		Map<String, Object> map = new HashMap<String, Object>();
-		
 		map.put("account", this.api.getAccount());
 		map.put( "login", this.api.getLogin());
 		map.put("password", this.api.getPassword());
-		map.put( "from", this.from);
+		map.put( "from", this.api.getFrom());
 		if ( this.to.size() >1) {
 			StringBuilder sb = new StringBuilder( this.to.get(0));
 			for (int i = 1; i< this.to.size(); i ++) {
 				sb.append( ',').append( this.to.get(i) );
 			}
 			map.put("to", sb.toString() );
+		} else {
+			map.put("to", this.to.get(0));
 		}
 		map.put("message", this.message);
-		map.put("noStop", this.nostop);
+		map.put("noStop", (this.addStop? 0:1) );
 		if ( this.date !=null) {
 			String tmp = new SimpleDateFormat( Constants.DATE_FORMAT).format( this.date);
 			map.put("deferred", tmp);
@@ -100,14 +103,23 @@ public class SMSMessage {
 		if( this.tag != null ) {
 			map.put("tag", this.tag);
 		}
-		map.put("contenType", this.contentType);		
+		map.put("contentType", this.contentType.getValue());		
 		return map;		
 	}
 	
-	
-	public void send()
+	/**
+	 * Send text message
+	 * @return The Body of the response
+	 * @throws SMSException if data is malformed
+	 */
+	public String send()
 	throws SMSException {
-		
+		checkData();
+		HttpRequest req = HttpRequest.get( Constants.URL, getData(), false);
+		if( this.api.isTrustAllCertificates()) {
+			req.trustAllCerts();
+		}
+		System.out.println( req.toString());
+		return req.body();
 	}
-	
 }
